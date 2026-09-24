@@ -24,6 +24,8 @@ export interface PageEventsPreviewProps {
     style: string;
     styleObject?: CSSProperties;
     readOnly: boolean;
+    renderMode: "design" | "xray" | "structure";
+    translate: (text: string) => string;
     onWillFocus: {} | null;
     onDidFocus: {} | null;
     onWillBlur: {} | null;

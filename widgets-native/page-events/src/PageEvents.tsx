@@ -1,27 +1,40 @@
-import { ReactElement, createElement } from "react";
-import { NavigationEventCallback, NavigationEvents } from "react-navigation";
+import { ReactElement, useContext, useEffect } from "react";
+import { NavigationContext } from "@react-navigation/native";
 import { ActionValue } from "mendix";
 
 import { PageEventsProps } from "../typings/PageEventsProps";
 
 type ActionName = "onWillFocus" | "onDidFocus" | "onWillBlur" | "onDidBlur";
 
-export function PageEvents(props: PageEventsProps<any>): ReactElement {
-    const bindAction = (actionName: ActionName): NavigationEventCallback => {
-        return () => {
-            const action = props[actionName] as ActionValue | undefined;
-            if (action?.canExecute && !action?.isExecuting) {
-                action.execute();
-            }
-        };
+export function PageEvents(props: PageEventsProps<any>): ReactElement | null {
+    const navigation = useContext(NavigationContext);
+
+    const bindAction = (actionName: ActionName) => () => {
+        const action = props[actionName] as ActionValue | undefined;
+        if (action?.canExecute && !action.isExecuting) {
+            action.execute();
+        }
     };
 
-    return (
-        <NavigationEvents
-            onWillFocus={bindAction("onWillFocus")}
-            onDidFocus={bindAction("onDidFocus")}
-            onWillBlur={bindAction("onWillBlur")}
-            onDidBlur={bindAction("onDidBlur")}
-        />
-    );
+    useEffect(() => {
+        // For coming back to page
+        const subFocus = navigation?.addListener("focus", () => {
+            bindAction("onWillFocus")();
+            bindAction("onDidFocus")();
+        });
+        // For leaving a page
+        const subBlur = navigation?.addListener("blur", () => {
+            bindAction("onWillBlur")();
+            bindAction("onDidBlur")();
+        });
+        return () => {
+            if (subFocus) {
+                subFocus();
+            }
+            if (subBlur) {
+                subBlur();
+            }
+        };
+    });
+    return null;
 }
